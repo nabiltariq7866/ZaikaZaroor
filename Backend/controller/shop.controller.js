@@ -70,7 +70,7 @@ export const createOrUpdateShop = async (req, res) => {
           .status(401)
           .json({ message: "Unauthorized. Owner ID is missing." });
       }
-      console.log(req.file)
+      console.log(req.file);
       if (!req.file) {
         return res.status(400).json({ message: "Shop image is required." });
       }
@@ -90,7 +90,7 @@ export const createOrUpdateShop = async (req, res) => {
       });
 
       await shop.populate("owner");
-      res.status(201).json({message:"shop create succfully",shop})
+      res.status(201).json({ message: "shop create succfully", shop });
     }
   } catch (error) {
     return res
@@ -100,9 +100,11 @@ export const createOrUpdateShop = async (req, res) => {
 };
 export const getMyShop = async (req, res) => {
   try {
-    const checkData=await Shop.find();
-    if(checkData.length===0){
-      return res.status(200).json({ message: "Your shop is empty", data:checkData });
+    const checkData = await Shop.find();
+    if (checkData.length === 0) {
+      return res
+        .status(200)
+        .json({ message: "Your shop is empty", data: checkData });
     }
     const shop = await Shop.findOne({ owner: req.user._id }).populate(
       "owner item"
@@ -110,7 +112,29 @@ export const getMyShop = async (req, res) => {
     if (!shop) {
       return res.status(400).json({ message: "Shop not founded" });
     }
-    res.status(200).json({message:"Your shop data ",shop})
+    res.status(200).json({ message: "Your shop data ", shop });
+  } catch (error) {
+    res.status(500).json({ message: "internal server error", error });
+  }
+};
+export const getShopByCity = async (req, res) => {
+  try {
+    const { city } = req.params;
+    if (!city) {
+      return res.status(400).json({ message: "City parameter is required." });
+    }
+    const shops = await Shop.find({
+      city: { $regex: new RegExp(`^${city}$`, "i") },
+    }).populate("owner", "-password");
+    if (!shops || shops.length === 0) {
+      return res
+        .status(404)
+        .json({ message: `No shops found in ${city}.`, shops: [] });
+    }
+    return res.status(200).json({
+      message: `Successfully found ${shops.length} shops in ${city}.`,
+      shops: shops,
+    });
   } catch (error) {
     res.status(500).json({ message: "internal server error", error });
   }

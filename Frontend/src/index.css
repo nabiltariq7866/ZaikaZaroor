@@ -1,1 +1,20 @@
 @import "tailwindcss";
+
+@tailwind utilities;
+
+/* === YAHAN SE ADD KAREIN === */
+
+/* Chrome, Safari, Opera (aur naye Edge) ke liye */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Firefox ke liye */
+* {
+  scrollbar-width: none;
+}
+
+/* Purane IE/Edge ke liye */
+* {
+  -ms-overflow-style: none;
+}

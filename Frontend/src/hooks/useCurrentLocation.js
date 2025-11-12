@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-
+import axios from "axios"
 export const useCurrentLocation = () => {
   const [location, setLocation] = useState(null);
   const [city, setCity] = useState(null);
@@ -15,27 +15,11 @@ export const useCurrentLocation = () => {
     
     const handleSuccess = async (position) => {
       const { latitude, longitude } = position.coords;
-      
+      const apiKey=import.meta.env.VITE_GEOAPIKEY;
       try {
-        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-        if (!response.ok) throw new Error('Failed to fetch location data.');
-        
-        const data = await response.json();
-        console.log(data)
-        
-        // --- YAHAN CHANGE KIYA HAI ---
-        // Aapke JSON example ke mutabiq behtar logic
-        // Yeh sab se choti jagah (village) se shuru karega
-        const locationName = data.address?.village ||      // e.g., "Shamkay Bhattian"
-                             data.address?.municipality ||  // e.g., "Raiwind Tehsil"
-                             data.address?.suburb ||
-                             data.address?.town ||
-                             data.address?.city ||
-                             data.address?.state ||         // Fallback e.g., "Punjab"
-                             'Unknown Location';
-        setCity(data.address?.city)
-        setLocation(locationName);
-        // -----------------------------
+        const {data} = await axios.get(`https://api.geoapify.com/v1/geocode/reverse?lat=${latitude}&lon=${longitude}&format=json&apiKey=${apiKey}`)
+        setCity(data?.results[0]?.city)
+        setLocation(data?.results[0]?.city);
 
       } catch (err) {
         setError(err.message);

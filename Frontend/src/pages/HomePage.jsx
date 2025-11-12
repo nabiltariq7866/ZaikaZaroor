@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Input, Button, Card, Tag } from 'antd';
-import { ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { categories } from '../utils/constants';
 import { useCurrentLocation } from '../hooks/useCurrentLocation';
@@ -65,34 +65,114 @@ const HeroSection = () => (
 );
 
 // --- 2. Categories Section ---
-const CategoriesSection = () => (
-  <div className="container mx-auto px-4 py-12">
-    <div className="flex justify-between items-center mb-6">
-      <h2 className="text-3xl font-bold text-gray-800">Popular Categories</h2>
-      <Link to="/categories" className="text-orange-600 font-semibold flex items-center gap-1 hover:text-orange-700">
-        View All <ArrowRight size={16} />
-      </Link>
-    </div>
-    
-    <div className="flex overflow-x-auto space-x-4 pb-4">
-      {categories.map((category) => (
-        <div key={category.name} className="flex-shrink-0 w-36 text-center">
-          <img 
-            src={category.image} 
-            alt={category.name}
-            className="w-24 h-24 rounded-full object-cover mx-auto shadow-md border-4 border-white" 
+const CategoriesSection = () => {
+  const scrollContainerRef = useRef(null);
+  // (1) Nayi state scroll position track karne ke liye
+  const [scrollState, setScrollState] = useState({
+    canScrollLeft: false,
+    canScrollRight: true,
+  });
+
+  // (2) Scroll karne ke liye function
+  const scroll = (direction) => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = direction === 'left' ? -300 : 300;
+      scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  // (3) Function jo check karega ke scroll limits tak pohnch gaye hain ya nahi
+  const checkScrollLimits = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      
+      setScrollState({
+        canScrollLeft: scrollLeft > 0,
+        // -1 precision issues ke liye
+        canScrollRight: scrollLeft < (scrollWidth - clientWidth - 1), 
+      });
+    }
+  };
+
+  // (4) Component load hotay hi aur scroll karne par limits check karein
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      // Pehli baar check karein (ho sakta hai items kam hon)
+      checkScrollLimits();
+      
+      // Har scroll par check karein
+      container.addEventListener('scroll', checkScrollLimits);
+      
+      // Window resize par bhi check karein
+      window.addEventListener('resize', checkScrollLimits);
+
+      // Cleanup
+      return () => {
+        container.removeEventListener('scroll', checkScrollLimits);
+        window.removeEventListener('resize', checkScrollLimits);
+      };
+    }
+  }, [categories]); // Jab categories load hon, tab dobara check karein
+
+  return (
+    <div className="container mx-auto px-4 py-12">
+      {/* (5) Header (Arrow buttons ab yahan hain) */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold text-gray-800">Popular Categories</h2>
+        
+        {/* Actions (Buttons aur View All link) */}
+        <div className="flex items-center gap-2">
+          {/* (6) Left Button (Conditional) */}
+          <Button
+            shape="circle"
+            icon={<ArrowLeft size={16} />}
+            onClick={() => scroll('left')}
+            disabled={!scrollState.canScrollLeft} // Disable karein
+            className={!scrollState.canScrollLeft ? 'opacity-30' : ''}
           />
-          <p className="mt-2 font-semibold text-gray-700">{category.name}</p>
+          
+          {/* (7) Right Button (Conditional) */}
+          <Button
+            shape="circle"
+            icon={<ArrowRight size={16} />}
+            onClick={() => scroll('right')}
+            disabled={!scrollState.canScrollRight} // Disable karein
+            className={!scrollState.canScrollRight ? 'opacity-30' : ''}
+          />
+
+          {/* <Link to="/categories" className="text-orange-600 font-semibold flex items-center gap-1 hover:text-orange-700 ml-4">
+            View All <ArrowRight size={16} />
+          </Link> */}
         </div>
-      ))}
+      </div>
+      
+      {/* (8) Scrollable div (ab relative wrapper ke bagher) */}
+      <div 
+        ref={scrollContainerRef} 
+        className="flex overflow-x-auto space-x-4 pb-4 scroll-smooth"
+        // (9) 'onScroll' event add kiya (iOS/Safari ke liye)
+        onScroll={checkScrollLimits} 
+      >
+        {categories.map((category) => (
+          <div key={category.name} className="flex-shrink-0 w-36 text-center">
+            <img 
+              src={category.image} 
+              alt={category.name}
+              className="w-24 h-24 rounded-full object-cover mx-auto shadow-md border-4 border-white" 
+            />
+            <p className="mt-2 font-semibold text-gray-700">{category.name}</p>
+          </div>
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
 
 // --- 3. Popular Restaurants Section ---
 const PopularRestaurantsSection = ({city}) => (
   <div className="bg-white py-12">
-    {console.log(city)}
     <div className="container mx-auto px-4">
       <h2 className="text-3xl font-bold text-gray-800 mb-6">Popular Restaurants {city}</h2>
       
@@ -130,7 +210,6 @@ const PopularRestaurantsSection = ({city}) => (
 // --- Main Home Page Component ---
 const HomePage = () => {
   const {city}=useCurrentLocation();
-  console.log(city)
   return (
     <div className="bg-gray-50">
       <HeroSection />

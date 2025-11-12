@@ -256,7 +256,7 @@ export const ApiProvider = ({ children }) => {
     try {
       const response = await apiClient.post("item", payload); // POST /api/item
       success(response.data.message);
-       getMyItems(); // List refresh ki
+      getMyItems(); // List refresh ki
       return { success: true };
     } catch (err) {
       errorHandling(err, showError);
@@ -272,7 +272,7 @@ export const ApiProvider = ({ children }) => {
       // Aapke routes ke mutabiq POST use kar rahe hain
       const response = await apiClient.post(`item/${id}`, payload); // POST /api/item/:id
       success(response.data.message);
-       getMyItems(); // List refresh ki
+      getMyItems(); // List refresh ki
       return { success: true };
     } catch (err) {
       errorHandling(err, showError);
@@ -281,12 +281,12 @@ export const ApiProvider = ({ children }) => {
       setLoading((prev) => ({ ...prev, updateItem: false }));
     }
   };
- const deleteItem = async (id) => {
+  const deleteItem = async (id) => {
     setLoading((prev) => ({ ...prev, deleteItem: true }));
     try {
-      const response = await apiClient.delete(`item/${id}`); 
+      const response = await apiClient.delete(`item/${id}`);
       success(response.data.message);
-       getMyItems(); // List refresh ki
+      getMyItems(); // List refresh ki
       return { success: true };
     } catch (err) {
       errorHandling(err, showError);
@@ -295,6 +295,24 @@ export const ApiProvider = ({ children }) => {
       setLoading((prev) => ({ ...prev, deleteItem: false }));
     }
   };
+  const [publicShops, setPublicShops] = useState([]);
+  const getShopsByCity = async (city) => {
+    setLoading((prev) => ({ ...prev, getShopsByCity: true }));
+    try {
+      const response = await apiClient.get(`shop-by-city/${city}`);
+      setPublicShops(response.data.shops); // (2) Data ko state mein store kiya
+      return { success: true }; // (3) Sirf success return kiya
+    } catch (err) {
+      if (err.response?.status !== 404) {
+        errorHandling(err, showError);
+      }
+      setPublicShops([]); // Error par state khali ki
+      return { success: false };
+    } finally {
+      setLoading((prev) => ({ ...prev, getShopsByCity: false }));
+    }
+  };
+  
   const value = {
     loading,
     registerUser,
@@ -311,11 +329,13 @@ export const ApiProvider = ({ children }) => {
     createShop,
     shop,
     updateShop,
-    getMyItems, 
-    createItem, 
+    getMyItems,
+    createItem,
     updateItem,
     items,
-    deleteItem
+    deleteItem,
+    getShopsByCity,
+    publicShops,
   };
 
   return <ApiContext.Provider value={value}>{children}</ApiContext.Provider>;
