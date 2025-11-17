@@ -18,8 +18,10 @@ export const useCurrentLocation = () => {
       const apiKey=import.meta.env.VITE_GEOAPIKEY;
       try {
         const {data} = await axios.get(`https://api.geoapify.com/v1/geocode/reverse?lat=${latitude}&lon=${longitude}&format=json&apiKey=${apiKey}`)
-        setCity(data?.results[0]?.city)
-        setLocation(data?.results[0]?.city);
+        let cityfind=data?.results[0]?.district
+        cityfind=cityfind.split(" ")
+        setCity(cityfind[0])
+        setLocation(cityfind[0]);
 
       } catch (err) {
         setError(err.message);

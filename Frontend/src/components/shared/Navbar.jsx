@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Input, Dropdown, Avatar, Button, Badge, Divider, Spin } from 'antd';
-import { Search, ShoppingCart, User, LogOut, LayoutDashboard, ChevronDown, MapPin } from 'lucide-react';
+import { Input, Dropdown, Avatar, Button, Badge, Divider, Spin, Popover, List, Typography, Empty } from 'antd'; 
+import { Search, ShoppingCart, User, LogOut, LayoutDashboard, ChevronDown, MapPin, Plus, Minus, Trash2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApi } from '../../context/ApiContext';
 import { useCurrentLocation } from '../../hooks/useCurrentLocation';
-
-// --- Profile Dropdown (Jab user login ho) ---
+import { useCart } from '../../context/CartContext'; 
 const ProfileDropdown = () => {
   const { user, logoutUser } = useApi();
   const navigate = useNavigate();
@@ -43,7 +42,7 @@ const ProfileDropdown = () => {
   );
 };
 
-// --- Login Button (Jab user login na ho) ---
+// --- Login Button ---
 const LoginButton = () => (
   <Link to="/login">
     <Button type="primary" className="bg-orange-600 text-white hover:bg-orange-700">
@@ -52,11 +51,10 @@ const LoginButton = () => (
   </Link>
 );
 
-// --- Custom Search Bar (Location ke sath) ---
+// --- Custom Search Bar ---
 const LocationSearchBar = () => {
   const { location, loading: locationLoading } = useCurrentLocation();
 
-  // Location wala hissa (prefix)
   const locationAddon = (
     <div className="flex items-center pr-2">
       <MapPin size={20} className="text-gray-400 ml-3 mr-2 flex-shrink-0" />
@@ -68,7 +66,6 @@ const LocationSearchBar = () => {
   );
 
   return (
-    // AntD ka Input.Search component use kiya
     <Input.Search
       placeholder="Search for restaurants..."
       size="large"
@@ -76,20 +73,93 @@ const LocationSearchBar = () => {
         <Button 
           type="primary" 
           icon={<Search />} 
-          className="bg-orange-600" // Button ko orange kiya
+          className="bg-orange-600"
         />
       }
-      addonBefore={locationAddon} // Location ko prefix mein add kiya
-      className="custom-location-search" // CSS customization ke liye (agar zaroorat pare)
+      addonBefore={locationAddon} 
+      className="custom-location-search" 
     />
   );
 };
 
+// --- Cart Popover Content ---
+const CartPopoverContent = ({ onCheckout }) => {
+  const { cartItems, addToCart, removeFromCart, getTotalPrice } = useCart();
+  const total = getTotalPrice();
+
+  return (
+    <div className="w-[350px]">
+      {cartItems.length === 0 ? (
+        <Empty description="Your cart is empty" />
+      ) : (
+        <List
+          itemLayout="horizontal"
+          dataSource={cartItems}
+          renderItem={item => (
+            <List.Item
+              actions={[
+                <Button 
+                  size="small" 
+                  type="text" 
+                  icon={<Minus size={14} />} 
+                  onClick={() => removeFromCart(item._id)} 
+                />,
+                <span className="font-bold mx-1">{item.quantity}</span>,
+                <Button 
+                  size="small" 
+                  type="text" 
+                  icon={<Plus size={14} />} 
+                  onClick={() => addToCart(item)} 
+                />
+              ]}
+            >
+              <List.Item.Meta
+                avatar={<Avatar src={item.image} />}
+                title={<span className="font-semibold">{item.name}</span>}
+                description={`Rs. ${item.price} x ${item.quantity} = Rs. ${(item.price * item.quantity).toLocaleString()}`}
+              />
+            </List.Item>
+          )}
+        />
+      )}
+      
+      {cartItems.length > 0 && (
+        <>
+          <Divider className="my-2" />
+          <div className="flex justify-between items-center mb-4">
+            <Typography.Text strong className="text-lg">Total:</Typography.Text>
+            <Typography.Text strong className="text-lg text-orange-600">
+              Rs. {total.toLocaleString()}
+            </Typography.Text>
+          </div>
+          <Button 
+            type="primary" 
+            block 
+            className="bg-orange-600"
+            onClick={onCheckout}
+          >
+            Go to Checkout
+          </Button>
+        </>
+      )}
+    </div>
+  );
+};
 
 // --- Main Navbar Component ---
 const Navbar = () => {
   const { isAuthenticated } = useApi();
+  const { getCartCount } = useCart(); 
   const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [isCartVisible, setIsCartVisible] = useState(false);
+  const navigate = useNavigate();
+
+  const totalCartItems = getCartCount(); 
+
+  const handleCheckout = () => {
+    setIsCartVisible(false);
+    navigate('/checkout'); // (Yeh route aapko banana hoga)
+  };
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -100,13 +170,11 @@ const Navbar = () => {
             <span className="text-orange-600">Z</span>aika<span className="text-orange-600">Z</span>aroor
           </Link>
 
-          {/* Desktop Search Bar (Updated) */}
           <div className="hidden md:block w-full max-w-lg mx-4">
             <LocationSearchBar />
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Mobile Search Icon (Yeh pehle se md:hidden tha, jo aap chahte thay) */}
             <Button
               type="text"
               shape="circle"
@@ -115,21 +183,27 @@ const Navbar = () => {
               onClick={() => setIsSearchVisible(!isSearchVisible)}
             />
             
-            <Link to="/cart">
-              <Badge count={0} size="small">
+            <Popover 
+              content={<CartPopoverContent onCheckout={handleCheckout} />} 
+              title={<Typography.Title level={5}>Your Cart</Typography.Title>}
+              trigger="click" 
+              open={isCartVisible} 
+              onOpenChange={setIsCartVisible}
+              placement="bottomRight"
+            >
+              <Badge count={totalCartItems} size="small" offset={[-5, 5]}>
                 <Button
                   type="text"
                   shape="circle"
                   icon={<ShoppingCart className="text-gray-600" />}
                 />
               </Badge>
-            </Link>
+            </Popover>
 
             {isAuthenticated ? <ProfileDropdown /> : <LoginButton />}
           </div>
         </div>
 
-        {/* Mobile Search Bar (Jo click par khulta hai) */}
         {isSearchVisible && (
           <div className="mt-3 md:hidden">
             <LocationSearchBar />
@@ -141,4 +215,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-

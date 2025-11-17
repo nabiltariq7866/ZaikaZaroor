@@ -312,7 +312,23 @@ export const ApiProvider = ({ children }) => {
       setLoading((prev) => ({ ...prev, getShopsByCity: false }));
     }
   };
-  
+  const [publicItems, setPublicItems] = useState([]);
+  const getItemsByCity = async (city) => {
+    setLoading((prev) => ({ ...prev, getItemsByCity: true }));
+    try {
+      const response = await apiClient.get(`item-by-city/${city}`); 
+      setPublicItems(response.data.items); // Data ko state mein store kiya
+      return { success: true }; 
+    } catch (err) {
+      if (err.response?.status !== 404) {
+        errorHandling(err, showError);
+      }
+      setPublicItems([]); // Error par state khali ki
+      return { success: false };
+    } finally {
+      setLoading((prev) => ({ ...prev, getItemsByCity: false }));
+    }
+  };
   const value = {
     loading,
     registerUser,
@@ -336,6 +352,8 @@ export const ApiProvider = ({ children }) => {
     deleteItem,
     getShopsByCity,
     publicShops,
+    getItemsByCity,
+    publicItems
   };
 
   return <ApiContext.Provider value={value}>{children}</ApiContext.Provider>;

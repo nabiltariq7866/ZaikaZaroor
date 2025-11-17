@@ -109,7 +109,7 @@ export const getMyItems = async (req, res) => {
 };
 export const deleteItem = async (req, res) => {
   try {
-    const {id }= req.params;
+    const { id } = req.params;
     const ownerId = req.user._id;
     const shop = await Shop.findOne({ owner: ownerId });
     if (!shop) {
@@ -117,23 +117,50 @@ export const deleteItem = async (req, res) => {
         .status(404)
         .json({ message: "Shop not found for this owner." });
     }
-    const item =await Item.findById(id);
-    
+    const item = await Item.findById(id);
+
     if (item.shop.toString() !== shop._id.toString()) {
-      return res
-        .status(403)
-        .json({
-          message: "Unauthorized. This item does not belong to your shop.",
-        });
+      return res.status(403).json({
+        message: "Unauthorized. This item does not belong to your shop.",
+      });
     }
-    await Item.findByIdAndDelete(id)
-     return res.status(200).json({
+    await Item.findByIdAndDelete(id);
+    return res.status(200).json({
       message: "Item deleted successfully",
     });
-     
   } catch (error) {
-     return res.status(500).json({
+    return res.status(500).json({
       message: "Item delete error",
+      error: error.message,
+    });
+  }
+};
+export const getItemsByCity = async (req, res) => {
+  try {
+    const { city } = req.params;
+    if (!city) {
+      return res.status(400).json({ message: "City parameter is required." });
+    }
+    const shops = await Shop.find({
+      city: { $regex: new RegExp(`^${city}$`, 'i') }
+    });
+    if (!shops || shops.length === 0) {
+      return res.status(404).json({ message: `No shops found in ${city}.`, items: [] });
+    }
+    const shopIds = shops.map(shop => shop._id);
+    const items = await Item.find({ 
+      shop: { $in: shopIds } 
+    }).populate("shop"); 
+    if (!items || items.length === 0) {
+      return res.status(404).json({ message: `No items found in ${city}.`, items: [] });
+    }
+    return res.status(200).json({
+      message: `Found ${items.length} items in ${city}`,
+      items: items,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
       error: error.message,
     });
   }

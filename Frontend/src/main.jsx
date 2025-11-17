@@ -19,7 +19,7 @@ import NotFoundPage from "./pages/NotFoundPage.jsx";
 
 // --- Route Components ---
 import ProtectedRoute from "./components/auth/ProtectedRoute.jsx";
-import PublicOnlyRoute from "./components/auth/PublicOnlyRoute.jsx"; 
+import PublicOnlyRoute from "./components/auth/PublicOnlyRoute.jsx";
 
 // --- Pages ---
 import HomePage from "./pages/HomePage.jsx";
@@ -28,24 +28,58 @@ import OwnerDashboard from "./pages/owner/OwnerDashboard.jsx";
 import DeliveryDashboard from "./pages/deliveryBoy/DeliveryDashboard.jsx";
 import OwnerMyShopPage from "./pages/owner/OwnerMyShopPage.jsx";
 import OwnerFoodItemPage from "./pages/owner/OwnerFoodItemPage.jsx";
+import { CartProvider } from "./context/CartContext.jsx";
 const router = createBrowserRouter([
   {
     path: "/",
     element: <AppRoot />,
-    children: [
-      { path: "/", element: <HomePage /> },
-    ],
+    children: [{ path: "/", element: <HomePage /> }],
   },
-  { path: "/login", element: (<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>) },
-  { path: "/signup", element: (<PublicOnlyRoute><SignUpPage /></PublicOnlyRoute>) },
-  { path: "/verify-otp", element: (<PublicOnlyRoute><VerifyOTPPage /></PublicOnlyRoute>) },
-  { path: "/forgot-password", element: (<PublicOnlyRoute><ForgotPasswordPage /></PublicOnlyRoute>) },
-  { path: "/reset-password/:token", element: (<PublicOnlyRoute><ResetPasswordPage/></PublicOnlyRoute>) },
- {
-    path: "/", 
+  {
+    path: "/login",
     element: (
-      <ProtectedRoute allowedRoles={['user']}>
-        <DashboardLayout /> 
+      <PublicOnlyRoute>
+        <LoginPage />
+      </PublicOnlyRoute>
+    ),
+  },
+  {
+    path: "/signup",
+    element: (
+      <PublicOnlyRoute>
+        <SignUpPage />
+      </PublicOnlyRoute>
+    ),
+  },
+  {
+    path: "/verify-otp",
+    element: (
+      <PublicOnlyRoute>
+        <VerifyOTPPage />
+      </PublicOnlyRoute>
+    ),
+  },
+  {
+    path: "/forgot-password",
+    element: (
+      <PublicOnlyRoute>
+        <ForgotPasswordPage />
+      </PublicOnlyRoute>
+    ),
+  },
+  {
+    path: "/reset-password/:token",
+    element: (
+      <PublicOnlyRoute>
+        <ResetPasswordPage />
+      </PublicOnlyRoute>
+    ),
+  },
+  {
+    path: "/",
+    element: (
+      <ProtectedRoute allowedRoles={["user"]}>
+        <DashboardLayout />
       </ProtectedRoute>
     ),
     children: [
@@ -53,14 +87,14 @@ const router = createBrowserRouter([
       // (Jab aap naye pages banayein, yahan add karein)
       // { path: "my-orders", element: <UserOrdersPage /> },
       // { path: "profile", element: <ProfilePage /> },
-    ]
+    ],
   },
 
   // (B) Owner Routes
   {
     path: "/owner", // Parent path
     element: (
-      <ProtectedRoute allowedRoles={['owner']}>
+      <ProtectedRoute allowedRoles={["owner"]}>
         <DashboardLayout />
       </ProtectedRoute>
     ),
@@ -70,14 +104,14 @@ const router = createBrowserRouter([
       { path: "my-item", element: <OwnerFoodItemPage /> },
       // { path: "orders", element: <OwnerOrdersPage /> },
       // { path: "menu", element: <OwnerMenuPage /> },
-    ]
+    ],
   },
 
   // (C) Delivery Boy Routes
   {
     path: "/delivery", // Parent path
     element: (
-      <ProtectedRoute allowedRoles={['deliveryBoy']}>
+      <ProtectedRoute allowedRoles={["deliveryBoy"]}>
         <DashboardLayout />
       </ProtectedRoute>
     ),
@@ -85,9 +119,9 @@ const router = createBrowserRouter([
       { path: "dashboard", element: <DeliveryDashboard /> },
       // { path: "tasks", element: <DeliveryTasksPage /> },
       // { path: "profile", element: <DeliveryProfilePage /> },
-    ]
+    ],
   },
-  
+
   { path: "*", element: <NotFoundPage /> },
 ]);
 
@@ -95,7 +129,9 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <App>
       <ApiProvider>
-        <RouterProvider router={router} />
+        <CartProvider>
+          <RouterProvider router={router} />
+        </CartProvider>
       </ApiProvider>
     </App>
   </StrictMode>
